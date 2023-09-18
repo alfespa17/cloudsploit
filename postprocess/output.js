@@ -125,7 +125,38 @@ module.exports = {
             }
         };
     },
+    /**
+     * Creates an output handler that writes output in JSON SARIF format version 2.1.0 to a predefined endpoint 
+     * Schema definition: https://github.com/oasis-tcs/sarif-spec/blob/main/Documents/CommitteeSpecifications/2.1.0/sarif-schema-2.1.0.json
+     * @param {fs.WriteSteam} stream The stream to write to or an object that
+     * obeys the writeable stream contract.
+     */
+    createSarifEndpoint: function(stream, settings) {
+        var results = [];
+        return {
+            stream: stream,
+    
+            writeResult: function(result, plugin, pluginKey, complianceMsg) {
+                var toWrite = {
+                    plugin: pluginKey,
+                    category: plugin.category,
+                    title: plugin.title,
+                    description: plugin.description,
+                    resource: result.resource || 'N/A',
+                    region: result.region || 'Global',
+                    status: exchangeStatusWordSarif(result),
+                    message: result.message
+                };
 
+                if (complianceMsg) toWrite.compliance = complianceMsg;
+                results.push(toWrite);
+            },
+    
+            close: function() {
+                log(`INFO: Sending SARIF report to ${settings.sarifEndpoint}`, settings);
+            }
+        };
+    },
     /**
      * Creates an output handler that writes output using JSON SARIF format version 2.1.0
      * Schema definition: https://github.com/oasis-tcs/sarif-spec/blob/main/Documents/CommitteeSpecifications/2.1.0/sarif-schema-2.1.0.json
@@ -458,6 +489,11 @@ module.exports = {
         if (settings.collection) {
             var streamColl = fs.createWriteStream(settings.collection);
             collectionOutput = this.createCollection(streamColl, settings);
+        }
+
+        if (settings.sarifEndpoint) {
+            var streamJson = fs.createWriteStream(settings.json);
+            outputs.push(this.createSarifEndpoint(streamJson, settings));
         }
 
         var addConsoleOutput = settings.console;
