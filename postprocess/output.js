@@ -491,7 +491,7 @@ module.exports = {
             collectionOutput = this.createCollection(streamColl, settings);
         }
 
-        if (settings.sarifEndpoint) {
+        if (settings.json && settings.sarifEndpoint) {
             var streamJson = fs.createWriteStream(settings.json);
             outputs.push(this.createSarifEndpoint(streamJson, settings));
         }
