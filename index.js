@@ -4,18 +4,11 @@ const { ArgumentParser } = require('argparse');
 const engine = require('./engine');
 
 
-console.log(`
-   _____ _                 _  _____       _       _ _   
-  / ____| |               | |/ ____|     | |     (_) |  
- | |    | | ___  _   _  __| | (___  _ __ | | ___  _| |_ 
- | |    | |/ _ \\| | | |/ _\` |\\___ \\| '_ \\| |/ _ \\| | __|
- | |____| | (_) | |_| | (_| |____) | |_) | | (_) | | |_ 
-  \\_____|_|\\___/ \\__,_|\\__,_|_____/| .__/|_|\\___/|_|\\__|
-                                   | |                  
-                                   |_|                  
-
-  CloudSploit by Aqua Security, Ltd.
+console.log(`                              | 
+  ApplaudoSploit by Applaudo Studios (v1.0.0-beta.1)
   Cloud security auditing for AWS, Azure, GCP, Oracle, and GitHub
+
+  Based on cloudSploit by Aqua Security, Ltd.
 `);
 
 const parser = new ArgumentParser({});

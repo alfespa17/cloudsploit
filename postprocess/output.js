@@ -8,6 +8,13 @@ function exchangeStatusWord(result) {
     return 'UNKNOWN';
 }
 
+function exchangeStatusWordSarif(result) {
+    if (result.status === 0) return 'none';
+    if (result.status === 1) return 'warning';
+    if (result.status === 2) return 'error';
+    return 'note';
+}
+
 function commaSafe(str) {
     if (!str) return '';
     return str.replace(/,/g, ' ');
@@ -120,7 +127,8 @@ module.exports = {
     },
 
     /**
-     * Creates an output handler that writes output in the JSON format.
+     * Creates an output handler that writes output using JSON SARIF format version 2.1.0
+     * Schema definition: https://github.com/oasis-tcs/sarif-spec/blob/main/Documents/CommitteeSpecifications/2.1.0/sarif-schema-2.1.0.json
      * @param {fs.WriteSteam} stream The stream to write to or an object that
      * obeys the writeable stream contract.
      */
@@ -137,7 +145,7 @@ module.exports = {
                     description: plugin.description,
                     resource: result.resource || 'N/A',
                     region: result.region || 'Global',
-                    status: exchangeStatusWord(result),
+                    status: exchangeStatusWordSarif(result),
                     message: result.message
                 };
 
@@ -146,9 +154,70 @@ module.exports = {
             },
       
             close: function() {
-                this.stream.write(JSON.stringify(results, null, 2));
+                var sarif = {
+                    "version": "2.1.0",
+                    "$schema": "http://json.schemastore.org/sarif-2.1.0",
+                    "runs": [
+                      {
+                        "tool": {
+                          "driver": {
+                            "name": "Applaudo Sploit",
+                            "version": "1.0",
+                            "informationUri": "https://applaudo.com/"
+                          }
+                        },
+                        "results": []
+                      }
+                    ]
+                  }
+
+                results.forEach(result=>{
+                    var addResult = {
+                        "level": "",
+                        "message": {
+                          "text": ""
+                        },
+                        "locations": [
+                          {
+                            "physicalLocation": {
+                              "artifactLocation": {
+                                "uri": "",
+                              }
+                            }
+                          }
+                        ],
+                        "ruleId": ""
+                      }
+
+                    addResult.level = result.status
+                    addResult.message.text = result.message
+                    addResult.locations[0].physicalLocation.artifactLocation.uri = result.resource
+                    addResult.ruleId = `${result.category.toUpperCase()}-${result.plugin.toUpperCase()}`
+
+
+                    sarif.runs[0].results.push(addResult)
+                })
+
+                var result = {
+                    "level": "",
+                    "message": {
+                      "text": ""
+                    },
+                    "locations": [
+                      {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "",
+                          }
+                        }
+                      }
+                    ],
+                    "ruleId": ""
+                  }
+
+                this.stream.write(JSON.stringify(sarif, null, 2));
                 this.stream.end();
-                log(`INFO: JSON file written to ${settings.json}`, settings);
+                log(`INFO: SARIF JSON file written to ${settings.json}`, settings);
             }
         };
     },
