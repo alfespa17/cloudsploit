@@ -1,5 +1,6 @@
 var fs = require('fs');
 var ttytable = require('tty-table');
+var axios = require('axios');
 
 function exchangeStatusWord(result) {
     if (result.status === 0) return 'OK';
@@ -154,6 +155,79 @@ module.exports = {
     
             close: function() {
                 log(`INFO: Sending SARIF report to ${settings.sarifEndpoint}`, settings);
+
+                var sarif = {
+                    "version": "2.1.0",
+                    "$schema": "http://json.schemastore.org/sarif-2.1.0",
+                    "runs": [
+                      {
+                        "tool": {
+                          "driver": {
+                            "name": "Applaudo Sploit",
+                            "version": "1.0",
+                            "informationUri": "https://applaudo.com/"
+                          }
+                        },
+                        "results": []
+                      }
+                    ]
+                  }
+
+                results.forEach(result=>{
+                    var addResult = {
+                        "level": "",
+                        "message": {
+                          "text": ""
+                        },
+                        "locations": [
+                          {
+                            "physicalLocation": {
+                              "artifactLocation": {
+                                "uri": "",
+                              }
+                            }
+                          }
+                        ],
+                        "ruleId": ""
+                      }
+
+                    addResult.level = result.status
+                    addResult.message.text = result.message
+                    addResult.locations[0].physicalLocation.artifactLocation.uri = result.resource
+                    addResult.ruleId = `${result.category.toUpperCase()}-${result.plugin.toUpperCase()}`
+
+
+                    sarif.runs[0].results.push(addResult)
+                })
+
+                var result = {
+                    "level": "",
+                    "message": {
+                      "text": ""
+                    },
+                    "locations": [
+                      {
+                        "physicalLocation": {
+                          "artifactLocation": {
+                            "uri": "",
+                          }
+                        }
+                      }
+                    ],
+                    "ruleId": ""
+                  }
+
+                  console.log("Response from sarif endpoint: ")
+                  axios.post(settings.sarifEndpoint,JSON.stringify(sarif, null, 2), {headers: {
+                    'content-type': 'application/json'
+                  }})
+                  .then(function (response) {
+                    console.log(response.data);
+                  })
+                  .catch(function (error) {
+                    console.log(error.data);
+                  });
+
             }
         };
     },
